@@ -1,0 +1,41 @@
+version: '2'
+services:
+  nginx:
+    image: nginx
+    container_name: web
+    networks:
+      static-network:
+        ipv4_address: 172.20.128.2
+      static-network-ipv6:
+        ipv6_address: 2001:3200:3200::2
+    ports:
+      - 80 # usual
+      - 2011 # non-usual
+      - 1702/udp # udp non-usual
+  mongo:
+    image: mongo
+    container_name: database
+    networks:
+      static-network:
+        ipv4_address: 172.20.128.3
+      static-network-ipv6:
+        ipv6_address: 2001:3200:3200::3
+    ports:
+      - 25 # usual BUT not unusual service (SMTP)
+      - 27001 # non-usual
+
+networks:
+  static-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          ip_range: 172.28.5.0/24
+  static-network-ipv6:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 2001:3200:3200::/64
+          gateway: 2001:3200:3200::1

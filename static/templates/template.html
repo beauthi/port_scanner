@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* {
+    font-family: 'Orienta', sans-serif;
+    color: #333;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td, th, table {
+    border:1px solid #000;
+}
+
+tr, th, td {
+    padding: 10px;
+}
+
+th {
+    background-color: lightgray;
+}
+
+.hide {
+    max-height: 0 !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border: 0 !important;
+    border-top: 0 !important;
+    border-bottom: 0 !important;
+    outline: 0 !important;
+    font-size: 0 !important;
+    margin: 0 !important;
+}
+</style>
+</head>
+<body>
+<h1>Rapport de scan</h1>
+<h2>Resume</h2>
+<table>
+    <tr>
+        <th>type de scan</th>
+        <td>{% if targets_reports.summary.soft %}soft{% else %}hard{% endif %}</td>
+    </tr>
+    <tr>
+        <th>date</th>
+        <td>{{ targets_reports.summary.timestr }}</td>
+    </tr>
+    <tr>
+        <th>temps de scan</th>
+        <td>{{ targets_reports.summary.scan_time }}</td>
+    </tr>
+    <tr>
+        <th>nombre de machines scannees</th>
+        <td>{{ targets_reports.summary.totalhosts }}</td>
+    </tr>
+    <tr>
+        <th>machines en ligne</th>
+        <td>{{ targets_reports.summary.uphosts }}</td>
+    </tr>
+    <tr>
+        <th>machines hors-ligne</th>
+        <td>{{ targets_reports.summary.totalhosts - targets_reports.summary.uphosts }}</td>
+    </tr>
+</table>
+{% for target_report_key in targets_reports.reports %}
+<h2>Cible : {{ target_report_key }}</h2>
+<h3>Resume</h3>
+<table>
+    <tr>
+        <th>nombre de machines scannees</th>
+        <td>{{ targets_reports.reports[target_report_key]["summary"]["totalhosts"] }}</td>
+    </tr>
+    <tr>
+        <th>machines en ligne</th>
+        <td>{{ targets_reports.reports[target_report_key]["summary"]["uphosts"] }}</td>
+    </tr>
+    <tr>
+        <th>machines hors-ligne</th>
+        <td>{{ targets_reports.reports[target_report_key]["summary"]["totalhosts"] - targets_reports.reports[target_report_key]["summary"]["uphosts"] }}</td>
+    </tr>
+    <tr>
+        <th>erreurs</th>
+        <td>
+            {% for ip_host in targets_reports.reports[target_report_key]["report"] %}
+                {% if targets_reports.reports[target_report_key]["report"][ip_host]["errors"]|length != 0 %}
+                    <b>{{ ip_host }} :</b><br/>
+                {% endif %}
+                {% for error_list in targets_reports.reports[target_report_key]["report"][ip_host]["errors"] %}
+                    {% for error in error_list %}
+                        {{ error }} <br/>
+                    {% endfor %}
+                {% endfor %}
+            {% endfor %}
+        </td>
+    </tr>
+</table>
+<h3>Details des cibles detectees</h3>
+<table>
+    <tr>
+        <th rowspan="2">IP, MAC, Hote</th>
+        <th colspan="3">Ports ouverts et services associes</th>
+    </tr>
+    <tr>
+        <th>
+            port
+        </th>
+        <th>
+            service
+        </th>
+        <th>
+            version
+        </th>
+    </tr>
+    {% for ip_host in targets_reports.reports[target_report_key]["report"] %}
+    <tr>
+        {% set rowspan = 1 %}
+        {% if "T" in targets_reports.reports[target_report_key]["report"][ip_host]["ports"] %}
+            {% set rowspan = rowspan + targets_reports.reports[target_report_key]["report"][ip_host]["ports"]["T"]|length %}
+        {% endif %}
+        {% if "U" in targets_reports.reports[target_report_key]["report"][ip_host]["ports"] %}
+            {% set rowspan = rowspan + targets_reports.reports[target_report_key]["report"][ip_host]["ports"]["U"]|length %}
+        {% endif %}
+        <td rowspan="{{ rowspan }}">
+            {% if targets_reports.reports[target_report_key]["report"][ip_host]["type"] == 4 %}
+            IPv4 : {{ ip_host }} <br/>
+            {% elif targets_reports.reports[target_report_key]["report"][ip_host]["type"] == 6 %}
+            IPv6 : {{ ip_host }} <br/>
+            {% else %}
+            Hote : {{ ip_host }} <br/>
+            {% endif %}
+            {% if targets_reports.reports[target_report_key]["report"][ip_host]["mac"] %}
+            MAC : {{ targets_reports.reports[target_report_key]["report"][ip_host]["mac"] }}<br/>
+            {% endif %}
+            {% if "hostnames" in targets_reports.reports[target_report_key]["report"][ip_host] %}
+            Hostnames :{% for hostname in targets_reports.reports[target_report_key]["report"][ip_host]["hostnames"] %} {{ hostname }}{% if loop.index > 1 and loop.index != loop.length %},{% endif %}{% endfor %}<br/>
+            {% endif %}
+        </td>
+        <td class="hide"></td>
+        <td class="hide"></td>
+        <td class="hide"></td>
+    </tr>
+    {% if "T" not in targets_reports.reports[target_report_key]["report"][ip_host]["ports"] and "U" not in targets_reports.reports[target_report_key]["report"][ip_host]["ports"] %}
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    {% endif %}
+    {% if "T" in targets_reports.reports[target_report_key]["report"][ip_host]["ports"] %}
+        {% for port in targets_reports.reports[target_report_key]["report"][ip_host]["ports"]["T"] %}
+        <tr>
+        <td>{{ port }}/tcp</td>
+        <td>{{ targets_reports.reports[target_report_key]["report"][ip_host]["ports"]["T"][port].name }}</td>
+        <td>{{ targets_reports.reports[target_report_key]["report"][ip_host]["ports"]["T"][port].version }}</td>
+        </tr>
+        {% endfor %}
+    {% endif %}
+    {% if "U" in targets_reports.reports[target_report_key]["report"][ip_host]["ports"] %}
+        {% for port in targets_reports.reports[target_report_key]["report"][ip_host]["ports"]["U"] %}
+        <tr>
+        <td>{{ port }}/udp</td>
+        <td>{{ targets_reports.reports[target_report_key]["report"][ip_host]["ports"]["U"][port].name }}</td>
+        <td>{{ targets_reports.reports[target_report_key]["report"][ip_host]["ports"]["U"][port].version }}</td>
+        </tr>
+        {% endfor %}
+    {% endif %}
+    {% endfor %}
+</table>
+{% endfor %}
+</body>
+</html>

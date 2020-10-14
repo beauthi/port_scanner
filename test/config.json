@@ -1,0 +1,5 @@
+{
+    "NMAP_BINARY_PATH": "/usr/bin/nmap",
+    "OUTPUT_DIRECTORY": "output",
+    "LOGGING_OUTPUT": "output.log"
+}
